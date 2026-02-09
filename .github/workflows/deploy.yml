@@ -1,0 +1,61 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build & Deploy via SFTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: ctype, iconv, pdo_mysql
+          tools: composer:v2
+
+      - name: Install dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+        env:
+          APP_ENV: prod
+
+      - name: Dump environment variables
+        run: composer dump-env prod
+        env:
+          APP_ENV: prod
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MAILER_DSN: ${{ secrets.MAILER_DSN }}
+
+      - name: Clear and warm up cache
+        run: php bin/console cache:clear --env=prod --no-debug
+
+      - name: Install assets
+        run: php bin/console assets:install public --env=prod --no-debug
+
+      - name: Deploy via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: ${{ secrets.SFTP_PORT }}
+          protocol: sftp
+          server-dir: /home/an/aneudymota.com/html/bellarix/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            docker-compose*.yml
+            .env
+            .env.local
+            .env.*.local
+            tests/**
+            var/log/**
