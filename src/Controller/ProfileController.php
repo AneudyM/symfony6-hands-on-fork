@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\MicroPostRepository;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class ProfileController extends AbstractController
